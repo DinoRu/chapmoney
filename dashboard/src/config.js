@@ -1,5 +1,5 @@
 const config = () => {
-  const API_URL = 'http://localhost/api/v1';
+  const API_URL = 'http://31.129.111.73/api/v1';
 
   return {
     API_URL,

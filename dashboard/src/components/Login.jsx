@@ -9,11 +9,10 @@ import {
   InputAdornment,
   IconButton,
 } from '@mui/material';
-import axios from 'axios';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import config from '../config';
 
-const API_URL = `${config().API_URL}/users/login`;
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import api from '../api';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -29,7 +28,7 @@ const AdminLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}`, credentials);
+      const response = await api.post('/users/login', credentials);
 
       if (response.data.role !== 'admin') {
         throw new Error('Accès réservé aux administrateurs');
