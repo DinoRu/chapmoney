@@ -112,14 +112,8 @@ const PaymentMethods = () => {
         account_number: data.account_number || null,
       };
 
-      // const headers = {
-      //   headers: {
-      //     Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
-      //   },
-      // };
-
       if (editingMethod) {
-        await api.patch(`/payment-type/${editingMethod.id}`);
+        await api.patch(`/payment-type/${editingMethod.id}`, payload);
       } else {
         api.post('/payment-type/', payload);
       }

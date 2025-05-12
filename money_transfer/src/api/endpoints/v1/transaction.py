@@ -191,12 +191,3 @@ async def delete_transaction(
     await session.commit()
     await session.refresh(transaction)
     return {"message": "Transaction supprimée avec succès"}
-#
-# @router.delete("/mask/{id}", status_code=status.HTTP_204_NO_CONTENT)
-# async def soft_delete_transaction(
-#         transaction=Depends(get_transaction_or_404),
-#         session: AsyncSession = Depends(get_session)
-# ):
-#     transaction.is_hidden = True
-#     await session.commit()
-#     await session.refresh(transaction)
