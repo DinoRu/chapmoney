@@ -32,13 +32,11 @@ import api from '../api';
 
 const schema = yup.object().shape({
   from_currency: yup.string().required('La devise source est obligatoire'),
-  to_currency: yup
-    .string()
-    .required('La devise cible est obligatoire')
-    .notOneOf(
-      [yup.ref('from_currency')],
-      'Les devises doivent être différentes',
-    ),
+  to_currency: yup.string().required('La devise cible est obligatoire'),
+  // .notOneOf(
+  //   [yup.ref('from_currency')],
+  //   'Les devises doivent être différentes',
+  // ),
   rate: yup
     .number()
     .typeError('Doit être un nombre')

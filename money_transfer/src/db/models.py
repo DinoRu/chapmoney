@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+import random
 from typing import List, Optional
 
 from sqlalchemy import Index, UniqueConstraint
@@ -113,16 +114,20 @@ class PaymentType(SQLModel, table=True):
 
 
 
+
 def generate_reference():
-    return f"tx{uuid.uuid4().hex[:10].lower()}"
+    return f"{random.randint(10**7, 10**8 - 1)}"
 
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
-    __table_args__ = (Index("idx_transaction_status", "status"), )
+    __table_args__ = (
+        Index("idx_transaction_status", "status"),
+        Index("idx_transaction_reference", "reference")
+    )
 
     id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
     timestamp: datetime = Field(sa_column=Column(pg.TIMESTAMP(timezone=True), default=datetime.now))
-    reference: str = Field(sa_column=Column(pg.VARCHAR(12), unique=True), default_factory=generate_reference)
+    reference: str = Field(sa_column=Column(pg.VARCHAR(8), unique=True), default_factory=generate_reference)
     sender_id: uuid.UUID = Field(foreign_key="users.id")
     sender_country: str = Field(sa_column=Column(pg.VARCHAR(50), nullable=False))
     sender_currency: str = Field(sa_column=Column(pg.VARCHAR(10), nullable=False))

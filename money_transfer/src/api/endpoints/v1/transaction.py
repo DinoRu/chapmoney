@@ -39,16 +39,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-SMTP2GO_API_KEY = "api-90EC43E432504A44B7E71367181063E9"
-SMTP2GO_API_URL = "https://api.smtp2go.com/v3/email/send"
-
-@router.post("/send-email")
-async def send_email():
-
-    send_transaction_email.delay()
-
-    return {"message": "Email envoyé avec succès ✅"}
-
 
 async def get_transaction_or_404(id: uuid.UUID, session: AsyncSession = Depends(get_session)):
     stmt = select(Transaction).options(selectinload(Transaction.sender)).where(Transaction.id == id)

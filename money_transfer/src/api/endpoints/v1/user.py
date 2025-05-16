@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 import random
 from datetime import datetime, timedelta
@@ -321,7 +322,9 @@ async def send_otp(request: OTPSendRequest, session: AsyncSession = Depends(get_
     user = result.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(status_code=404, detail="Aucun compte associé à cet email")
+        # Sécurité : ne pas révéler l'absence de compte
+        await asyncio.sleep(random.uniform(0.5, 1.5))
+        return {"message": "Si l'email existe, un code OTP a été envoyé"}
 
     # Générer OTP (6 chiffre)
     otp_code = "".join(random.choices("0123456789", k=6))

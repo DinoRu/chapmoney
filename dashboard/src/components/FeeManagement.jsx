@@ -30,10 +30,8 @@ import api from '../api'; // Importez votre instance api configurée
 
 const schema = yup.object().shape({
   from_country: yup.string().required("Le pays d'origine est obligatoire"),
-  to_country: yup
-    .string()
-    .required('Le pays de destination est obligatoire')
-    .notOneOf([yup.ref('from_country')], 'Les pays doivent être différents'),
+  to_country: yup.string().required('Le pays de destination est obligatoire'),
+  // .notOneOf([yup.ref('from_country')], 'Les pays doivent être différents'),
   fee: yup
     .number()
     .typeError('Doit être un nombre')
