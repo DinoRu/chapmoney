@@ -3,7 +3,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
-from markdown_it.rules_inline.backticks import regex
 from pydantic import BaseModel, EmailStr, Field
 
 from src.db.models import User
@@ -52,7 +51,6 @@ class UserUpdate(BaseModel):
     phone: str
     email: EmailStr
 
-    # profile_picture_url: Optional[str] = None
 
 
 class UserWithToken(UserRead):
@@ -62,6 +60,11 @@ class UserWithToken(UserRead):
 
     class Config:
         from_attributes = True
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
 
 class EmailModel(BaseModel):
     addresses: List[str]

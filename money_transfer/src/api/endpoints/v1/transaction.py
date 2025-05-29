@@ -126,6 +126,7 @@ async def get_user_transactions(
 
     return transactions
 
+
 @router.get("/{id}", response_model=TransactionRead, status_code=status.HTTP_200_OK)
 async def get_transaction(
         transaction = Depends(get_transaction_or_404)

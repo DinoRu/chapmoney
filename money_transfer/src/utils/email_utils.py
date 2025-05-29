@@ -9,9 +9,9 @@ SMTP_HOST = "mail.smtp2go.com"
 SMTP_PORT = 2525
 SMTP_USER = "chapmoney.org"
 SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
-ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
+ADMIN_EMAIL = "madibablackpes@gmail.com"
 
-# USER_MAIL = 'diarra.msa@gmail.com'
+USER_MAIL = "madibablackpes@gmail.com"
 
 dashboard_url = settings.ADMIN_DASHBOARD_URL
 
@@ -20,7 +20,7 @@ def send_transaction_email(self):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "💸New transaction"
     msg["From"] = "ChapMoney Transaction <chapmoneyapp@chapmoney.org>"
-    msg['To'] = ADMIN_EMAIL
+    msg['To'] = USER_MAIL
 
     html_content = f"""
     <html>

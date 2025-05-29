@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, status, HTTPException, Depends, Request, Security, UploadFile, File
+from fastapi import APIRouter, status, HTTPException, Depends, Request, Security, UploadFile, File, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select, or_
@@ -18,9 +18,8 @@ from src.auth.permission import admin_required
 from src.config import settings
 from src.db.models import User, TokenBlacklist, PasswordResetOTP
 from src.db.session import get_session
-from src.email_service import send_email
 from src.schemas.user import UserRead, UserCreate, UserWithToken, UserLogin, UserUpdate, EmailModel, ChangePasswordRequest, ForgotPasswordRequest, \
-    ResetPassword, OTPSendRequest, OTPVerifyRequest, PasswordResetRequest, PinCreate, PinVerify
+    ResetPassword, OTPSendRequest, OTPVerifyRequest, PasswordResetRequest, PinCreate, PinVerify, RefreshTokenRequest
 from src.utils.email_utils import send_password_reset_email, send_password_reset_otp
 
 router = APIRouter()
@@ -75,12 +74,6 @@ async def create_user(user: UserCreate, session: AsyncSession = Depends(get_sess
 @router.post("/login", response_model=UserWithToken)
 async def login(user_data: UserLogin, session: AsyncSession = Depends(get_session)):
     user = await authenticate_user(credential=user_data.credential, password=user_data.password, session=session)
-    # if not user:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_401_UNAUTHORIZED,
-    #         detail="Identifiants incorrects",
-    #         headers={"WWW-Authenticate": "Bearer"},
-    #     )
 
     user_read = UserRead.from_orm(user)
     access_token = create_access_token({'sub': str(user.id)})
@@ -94,19 +87,22 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
 
 
 @router.post("/refresh-token")
-async def refresh_token(request: Request, session: AsyncSession = Depends(get_session)):
-    body = await request.json()
-    refresh_token = body.get("refresh_token")
-    if not refresh_token:
+async def refresh_token(body: RefreshTokenRequest = Body(...), session: AsyncSession = Depends(get_session)):
+    """
+
+    :param session:
+    :type body: RefreshTokenRequest
+    """
+    token_refresh = body.refresh_token
+    if not token_refresh:
         raise HTTPException(status_code=400, detail="Refresh token required")
 
-    # Verifier si le token n'est pas blacklisté
-    stmt = select(TokenBlacklist).where(TokenBlacklist.token == refresh_token)
+    stmt = select(TokenBlacklist).where(TokenBlacklist.token == token_refresh)
     result = await session.execute(stmt)
     if result.scalar_one_or_none():
         raise HTTPException(status_code=401, detail="Refresh token invalid or expired")
 
-    payload = decode_token(refresh_token, settings.REFRESH_SECRET_KEY)
+    payload = decode_token(token_refresh, settings.REFRESH_SECRET_KEY)
     if not payload or "sub" not in payload:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     user_id = payload.get("sub")
