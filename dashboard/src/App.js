@@ -53,6 +53,7 @@ import Rates from './components/Rates';
 import AdminLogin from './components/Login';
 import ProtectedRoute from './components/ProtectedRoutes';
 import CurrencyManagement from './components/Currency';
+import TransactionDetailPage from './components/TransactionDetaill';
 const getTheme = (mode) =>
   createTheme({
     palette: {
@@ -245,12 +246,19 @@ function Navbar({ toggleTheme, mode }) {
 }
 
 function App() {
-  const [mode, setMode] = useState('light');
+  const [mode, setMode] = useState(() => {
+    const savedMode = localStorage.getItem('themeMode');
+    return savedMode || 'light';
+  });
   const theme = useMemo(() => getTheme(mode), [mode]);
 
   const toggleTheme = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
+
+  useEffect(() => {
+    localStorage.setItem('themeMode', mode);
+  }, [mode]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -279,6 +287,10 @@ function App() {
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/" element={<TransactionTable />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route
+                  path="/transactions/:id"
+                  element={<TransactionDetailPage />}
+                />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/admin/login" replace />} />

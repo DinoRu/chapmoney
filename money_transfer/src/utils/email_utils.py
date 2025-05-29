@@ -16,11 +16,13 @@ USER_MAIL = "madibablackpes@gmail.com"
 dashboard_url = settings.ADMIN_DASHBOARD_URL
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
-def send_transaction_email(self):
+def send_transaction_email(self, transaction_id: str):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "💸New transaction"
     msg["From"] = "ChapMoney Transaction <chapmoneyapp@chapmoney.org>"
     msg['To'] = USER_MAIL
+
+    transaction_url = f"{dashboard_url}/{transaction_id}"
 
     html_content = f"""
     <html>
@@ -106,7 +108,7 @@ def send_transaction_email(self):
                     </ul>
 
                     <center>
-                        <a href="{dashboard_url}" class="button">Vérifier la transaction</a>
+                        <a href="{transaction_url}" class="button">Vérifier la transaction</a>
                     </center>
 
                     <p>Pour des raisons de sécurité, cette opération doit être approuvée dans les plus brefs délais.</p>

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import {
-  Chip,
   Container,
   Typography,
   Stack,
@@ -14,6 +13,9 @@ import {
   Grid,
   Divider,
 } from '@mui/material';
+
+import { formatAmount, StatusChip } from '../utils/formatters';
+
 import {
   CheckCircle,
   WhatsApp,
@@ -29,56 +31,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import api from '../api';
-
-const formatAmount = (amount, currency) => {
-  try {
-    return (
-      new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })
-        .format(amount)
-        .replace(currency, '')
-        .trim() + ` ${currency}`
-    );
-  } catch {
-    return `${amount} ${currency}`;
-  }
-};
-
-const StatusChip = ({ status }) => {
-  const statusConfig = {
-    'En cours': { bg: '#fff3e0', text: '#ef6c00', icon: '⏳' },
-    Éffectuée: { bg: '#e8f5e9', text: '#2e7d32', icon: '✅' },
-    // Expirée: { bg: '#ffebee', text: '#d32f2f', icon: '⌛' },
-    Annulée: { bg: '#f5f5f5', text: '#d32f2f', icon: '❌' },
-  };
-
-  const config = statusConfig[status] || {
-    bg: '#f5f5f5',
-    text: '#616161',
-    icon: '❓',
-  };
-
-  return (
-    <Chip
-      label={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>{config.icon}</span>
-          <span>{status}</span>
-        </div>
-      }
-      sx={{
-        backgroundColor: config.bg,
-        color: config.text,
-        fontWeight: 600,
-        '& .MuiChip-label': { padding: '0 12px' },
-      }}
-    />
-  );
-};
+import { useNavigate } from 'react-router-dom';
 
 const TransactionTable = () => {
   const [transactions, setTransactions] = useState([]);
@@ -86,6 +39,7 @@ const TransactionTable = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
 
   const fetchTransactions = async () => {
     try {
@@ -433,8 +387,9 @@ const TransactionTable = () => {
               }`,
           }}
           onRowClick={(params) => {
-            setSelectedTransaction(params.row);
-            setDetailOpen(true);
+            // setSelectedTransaction(params.row);
+            // setDetailOpen(true);
+            navigate(`/transactions/${params.row.id}`);
           }}
         />
       </div>

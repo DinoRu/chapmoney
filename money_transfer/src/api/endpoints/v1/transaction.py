@@ -71,7 +71,7 @@ async def create_transaction(
         }
     })
 
-    send_transaction_email.delay()
+    send_transaction_email.delay(transaction.id)
     return transaction
 
 
