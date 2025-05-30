@@ -9,9 +9,9 @@ SMTP_HOST = "mail.smtp2go.com"
 SMTP_PORT = 2525
 SMTP_USER = "chapmoney.org"
 SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
-ADMIN_EMAIL = "madibablackpes@gmail.com"
+ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
 
-USER_MAIL = "madibablackpes@gmail.com"
+USER_MAIL = "chapmoneyapp@chapmoney.org"
 
 dashboard_url = settings.ADMIN_DASHBOARD_URL
 
