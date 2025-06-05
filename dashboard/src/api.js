@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // baseURL: 'http://31.129.111.73/api/v1',
-  baseURL: 'http://localhost:8001/api/v1/',
+  baseURL: 'http://31.129.111.73/api/v1',
+  // baseURL: 'http://localhost:8001/api/v1/',
 });
 
 // Intercepteur de requête
