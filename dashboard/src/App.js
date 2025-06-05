@@ -19,13 +19,11 @@ import {
   MenuItem,
   IconButton,
   Box,
-  // Typography,
   Badge,
   Button,
   Divider,
   Drawer,
   List,
-  // ListItem,
   ListItemButton,
   ListItemText,
   useTheme,
@@ -41,7 +39,6 @@ import { ConfirmProvider } from 'material-ui-confirm';
 // Composants
 import logo from './assets/logo.png';
 import TransactionTable from './components/AdminDashboard';
-// import ExchangeRates from './components/ExchangeRates';
 import UserManagement from './components/UserManagement';
 import CountriesManagement from './components/CountriesPage';
 import ReceivingMethods from './components/ReceivingMethods';
@@ -54,6 +51,7 @@ import AdminLogin from './components/Login';
 import ProtectedRoute from './components/ProtectedRoutes';
 import CurrencyManagement from './components/Currency';
 import TransactionDetailPage from './components/TransactionDetaill';
+import PromotionNotification from './components/PromotionNotification';
 const getTheme = (mode) =>
   createTheme({
     palette: {
@@ -70,6 +68,15 @@ const getTheme = (mode) =>
               backgroundColor: mode === 'light' ? '#f5f5f5' : '#1e1e1e',
               borderRadius: 8,
             },
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 10,
           },
         },
       },
@@ -180,6 +187,7 @@ function Navbar({ toggleTheme, mode }) {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <PromotionNotification />
           <IconButton onClick={toggleTheme} color="inherit">
             {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
@@ -277,7 +285,6 @@ function App() {
                 <Route path="/countries" element={<CountriesManagement />} />
                 <Route path="/currencies" element={<CurrencyManagement />} />
                 <Route path="/rates" element={<Rates />} />
-                {/* <Route path="/exchange-rates" element={<ExchangeRates />} /> */}
                 <Route path="/fees" element={<FeesManagement />} />
                 <Route
                   path="/receiving-methods"

@@ -5,11 +5,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, status, HTTPException, Depends, Request, Security, UploadFile, File, Body
+from fastapi import APIRouter, status, HTTPException, Depends, Request, Security, UploadFile, File, Body, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
+from unidecode import unidecode
 
 from src.auth.auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token, create_reset_token, hash_pin, \
     verify_pin_hash
@@ -18,9 +20,11 @@ from src.auth.permission import admin_required
 from src.config import settings
 from src.db.models import User, TokenBlacklist, PasswordResetOTP
 from src.db.session import get_session
+from src.schemas.notifications import NotificationCreate
 from src.schemas.user import UserRead, UserCreate, UserWithToken, UserLogin, UserUpdate, EmailModel, ChangePasswordRequest, ForgotPasswordRequest, \
     ResetPassword, OTPSendRequest, OTPVerifyRequest, PasswordResetRequest, PinCreate, PinVerify, RefreshTokenRequest
 from src.utils.email_utils import send_password_reset_email, send_password_reset_otp
+from src.utils.notification_utils import get_player_ids_for_users, send_one_signal_notification
 
 router = APIRouter()
 
@@ -122,7 +126,7 @@ async def user_info(current_user = Depends(get_current_user)):
 
 
 
-@router.get("/", response_model=List[UserRead], dependencies=[Depends(admin_required)])
+@router.get("/", response_model=List[UserRead])
 async def get_all_users(
     session: AsyncSession = Depends(get_session)
 ):
@@ -130,6 +134,75 @@ async def get_all_users(
     results = await session.execute(stmt)
     users = results.scalars().all()
     return users
+
+@router.post("/update-player-id", status_code=status.HTTP_200_OK)
+async def update_player_id(
+        player_id: str = Body(..., embed=True),
+        current_user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_session)
+):
+    """
+        Met à jour le player_id OneSignal pour l'utilisateur courant
+    :param player_id:
+    :param current_user:
+    :param session:
+    :return:
+    """
+    # Vérifier que le player_id n'est pas deja attribué à un autre utilisateur
+    stmt = select(User).where(
+        User.onesignal_player_id == player_id,
+        User.id != current_user.id
+    )
+    result = await session.execute(stmt)
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ce player_id est déjà associé à un autre compte"
+        )
+    current_user.onesignal_player_id = player_id
+    session.add(current_user)
+
+    try:
+        await session.commit()
+        await session.refresh(current_user)
+        return {"status": "player_id_updated"}
+    except SQLAlchemyError as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la mise à jour du player_id"
+        )
+
+@router.post("/send-notification", dependencies=[Depends(admin_required)])
+async def send_notification_to_user(
+        notification: NotificationCreate,
+        background_tasks: BackgroundTasks,
+        session: AsyncSession = Depends(get_session)
+):
+    """
+       Envoie une notification à un ou plusieurs utilisateurs
+    """
+    # Si user_id est spécifié, on récupère le player_id correspondant
+    if notification.user_id:
+        player_ids = await get_player_ids_for_users(
+            [notification.user_id], session
+        )
+        if not player_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="L'utilisateur n'a pas de player_id enregistré"
+            )
+        notification.player_ids = player_ids
+
+    if not notification.player_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aucun destinataire valide trouvé"
+        )
+
+    # Envoi en arrière-plan
+    background_tasks.add_task(send_one_signal_notification, notification)
+    return {"status": "notification_queued", "recipient_count": len(notification.player_ids)}
 
 
 @router.patch("/{user_id}", response_model=UserRead)
@@ -188,6 +261,36 @@ async def delete_user(
     await session.commit()
     return {"message": "Votre compte a été supprimé avec success!"}
 
+
+@router.get("/search", dependencies=[Depends(admin_required)])
+async def search_users(
+        q: str,
+        session: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_current_user)
+):
+    if len(q) < 2:
+        return []
+
+    # Recherche insensible à la casse et aux accents
+    result = await session.execute(
+        select(User)
+        .where(
+            or_(
+                func.unaccent(User.full_name).ilike(f"%{unidecode(q)}%"),
+                func.unaccent(User.email).ilike(f"%{unidecode(q)}%"),
+                User.phone.ilike(f"%{q}%")
+            )
+        )
+        .limit(10)
+    )
+    users = result.scalars().all()
+
+    return [{
+        "id": str(user.id),
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone
+    } for user in users]
 
 
 @router.post("/logout")

@@ -32,9 +32,11 @@ import { fr } from 'date-fns/locale';
 
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
+// import TransactionSearch from './TransactionSearch';
 
 const TransactionTable = () => {
   const [transactions, setTransactions] = useState([]);
+  // const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -62,8 +64,8 @@ const TransactionTable = () => {
       headerName: 'Référence',
       flex: 1,
       renderCell: (params) => (
-        <Typography variant="body2" fontWeight="500">
-          #{params.value}
+        <Typography variant="body2" fontWeight="800">
+          {params.value}
         </Typography>
       ),
     },
@@ -183,7 +185,7 @@ const TransactionTable = () => {
   const TransactionDetailModal = ({ transaction, open, onClose }) => (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
-        Détails de la transaction #{transaction?.reference}
+        Détails de la transaction {transaction?.reference}
       </DialogTitle>
       <DialogContent>
         {transaction && (
@@ -293,6 +295,7 @@ const TransactionTable = () => {
   const handleValidate = async (id) => {
     try {
       await api.patch(`/transactions/${id}`, { status: 'Éffectuée' });
+      await api.post(`/transactions/${id}/notify`);
       await fetchTransactions();
     } catch (error) {
       console.error('Validation failed:', error.response?.data);
@@ -312,7 +315,7 @@ const TransactionTable = () => {
     setSelectedTransaction({
       ...transaction,
       senderPhone: transaction.recipient_phone,
-      senderEmail: 'Non fourni', // Ajoutez cette ligne si l'email n'est pas dans la réponse
+      senderEmail: 'Non fourni',
     });
     setOpenDialog(true);
   };
@@ -354,6 +357,7 @@ const TransactionTable = () => {
         <Typography variant="h4" fontWeight="700">
           Transactions
         </Typography>
+        {/* <TransactionSearch onSearchResults={setSearchResults} /> */}
         <Button
           variant="outlined"
           startIcon={<Refresh />}

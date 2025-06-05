@@ -38,6 +38,8 @@ class Settings(BaseSettings):
 
     FRONTEND_URL: str
     ADMIN_DASHBOARD_URL: str
+    ONESIGNALAPPID: str
+    ONESIGNALAPIKEY: str
 
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')
 
@@ -48,7 +50,7 @@ class Settings(BaseSettings):
         return self.REDIS_URL if self.ENV == 'docker' else self.REDIS_URL_LOCAL
 
     def active_rabbitmq_url(self):
-        return self.RABBITMQ_URL
+        return self.RABBITMQ_URL if self.ENV == "docker" else self.REDIS_URL_LOCAL
 
 
 settings = Settings()

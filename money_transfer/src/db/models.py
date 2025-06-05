@@ -47,6 +47,11 @@ class User(SQLModel, table=True):
                                  sa_column=Column(pg.TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow))
 
     pin_hash: Optional[str] = Field(default=None, sa_column=Column(pg.VARCHAR, nullable=True), description="Hash du code PIN", exclude=True)
+    onesignal_player_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(pg.VARCHAR, nullable=True),
+        description="ID de l'appareil pour les notification push onesignal"
+    )
 
     transactions: List["Transaction"] = Relationship(back_populates='sender', cascade_delete=True)
 
