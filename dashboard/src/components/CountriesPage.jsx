@@ -196,15 +196,23 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
     dial_code: '',
     phone_pattern: '',
     can_send: true,
+    is_virtual: false,
   });
+
+  // Filtrer les devises selon le type de pays
+  const filteredCurrencies = currencies.filter((currency) =>
+    formData.is_virtual ? currency.is_crypto : !currency.is_crypto,
+  );
 
   useEffect(() => {
     if (country) {
       setFormData({
         ...country,
         currency_id: country.currency?.id || '',
+        is_virtual: country.is_virtual,
       });
     } else {
+      // Valeurs par défaut pour les pays virtuels
       setFormData({
         name: '',
         code_iso: '',
@@ -212,6 +220,7 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
         dial_code: '',
         phone_pattern: '',
         can_send: true,
+        is_virtual: false,
       });
     }
   }, [country]);
@@ -221,7 +230,16 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
   };
 
   const handleToggle = (field) => {
-    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
+    const newValue = !formData[field];
+    const updatedData = { ...formData, [field]: newValue };
+
+    // Réinitialiser les champs téléphone pour les pays virtuels
+    if (field === 'is_virtual' && newValue) {
+      updatedData.dial_code = '';
+      updatedData.phone_pattern = '';
+    }
+
+    setFormData(updatedData);
   };
 
   return (
@@ -240,12 +258,13 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
 
           <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
             <TextField
-              label="Code ISO (ex: FR)"
+              label="Code ISO"
               name="code_iso"
               value={formData.code_iso}
               onChange={handleChange}
-              inputProps={{ maxLength: 3 }}
+              inputProps={{ maxLength: 10 }}
               required
+              helperText="Ex: USDC pour crypto"
             />
 
             <TextField
@@ -257,7 +276,7 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
               required
               disabled={!!country}
             >
-              {currencies.map((currency) => (
+              {filteredCurrencies.map((currency) => (
                 <MenuItem key={currency.id} value={currency.id}>
                   {currency.code} - {currency.name}
                 </MenuItem>
@@ -269,7 +288,8 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
               name="dial_code"
               value={formData.dial_code}
               onChange={handleChange}
-              required
+              required={!formData.is_virtual}
+              disabled={formData.is_virtual}
             />
           </Box>
 
@@ -278,20 +298,45 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
             name="phone_pattern"
             value={formData.phone_pattern}
             onChange={handleChange}
-            required
+            required={!formData.is_virtual}
+            disabled={formData.is_virtual}
             helperText="Ex: ^\\+33[1-9]\\d{8}$"
           />
 
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography>Autoriser l'envoi</Typography>
-            <IconButton onClick={() => handleToggle('can_send')}>
-              {formData.can_send ? (
-                <CheckCircle color="success" />
-              ) : (
-                <Cancel color="error" />
-              )}
-            </IconButton>
+          <Box display="flex" justifyContent="space-between">
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography>Autoriser l'envoi</Typography>
+              <IconButton onClick={() => handleToggle('can_send')}>
+                {formData.can_send ? (
+                  <CheckCircle color="success" />
+                ) : (
+                  <Cancel color="error" />
+                )}
+              </IconButton>
+            </Box>
+
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography>Pays virtuel (crypto)</Typography>
+              <IconButton onClick={() => handleToggle('is_virtual')}>
+                {formData.is_virtual ? (
+                  <CheckCircle color="success" />
+                ) : (
+                  <Cancel color="error" />
+                )}
+              </IconButton>
+            </Box>
           </Box>
+
+          {formData.is_virtual && (
+            <Alert severity="info">
+              Pour les pays virtuels :
+              <ul>
+                <li>Utilisez un code ISO descriptif (ex: USDC)</li>
+                <li>Sélectionnez une devise crypto</li>
+                <li>Les champs téléphoniques sont désactivés</li>
+              </ul>
+            </Alert>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -299,7 +344,10 @@ const CountryDialog = ({ open, onClose, country, currencies, onSubmit }) => {
         <Button
           variant="contained"
           onClick={() => onSubmit(formData)}
-          disabled={!formData.currency_id || !formData.phone_pattern}
+          disabled={
+            !formData.currency_id ||
+            (!formData.is_virtual && !formData.phone_pattern)
+          }
         >
           {country ? 'Modifier' : 'Créer'}
         </Button>

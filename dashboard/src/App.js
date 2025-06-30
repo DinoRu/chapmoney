@@ -143,6 +143,7 @@ function Navbar({ toggleTheme, mode }) {
         ))}
       </List>
       <Divider />
+      <PromotionNotification />
       <ListItemButton onClick={handleLogout} sx={{ color: 'error.main' }}>
         <ListItemText primary="Déconnexion" />
       </ListItemButton>
@@ -187,7 +188,7 @@ function Navbar({ toggleTheme, mode }) {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <PromotionNotification />
+          {!isMobile && <PromotionNotification />}
           <IconButton onClick={toggleTheme} color="inherit">
             {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>

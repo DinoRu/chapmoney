@@ -15,6 +15,8 @@ import {
   ListItemAvatar,
   ListItemText,
   Divider,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { Send, Close, Search, PersonAdd } from '@mui/icons-material';
 import api from '../api';
@@ -136,6 +138,36 @@ const PromotionNotification = () => {
             <Typography variant="subtitle2" gutterBottom>
               Destinataires ({selectedUsers.length})
             </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    onChange={async (e) => {
+                      const checked = e.target.checked;
+                      if (checked) {
+                        try {
+                          const { data } = await api.get('/users');
+                          const newUsers = data.filter(
+                            (u) =>
+                              !selectedUsers.some((sel) => sel.id === u.id),
+                          );
+                          setSelectedUsers((prev) => [...prev, ...newUsers]);
+                        } catch (error) {
+                          console.error(
+                            'Erreur lors du chargement de tous les clients',
+                            error,
+                          );
+                        }
+                      } else {
+                        // Déselectionner tous les utilisateurs
+                        setSelectedUsers([]);
+                      }
+                    }}
+                  />
+                }
+                label="Sélectionner tous les clients"
+              />
+            </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
               {selectedUsers.map((user) => (
                 <Chip

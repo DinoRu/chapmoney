@@ -9,7 +9,10 @@ version = 'v1'
 app = FastAPI(
     title="Money transfer",
     version=version,
-    root_path="/api"
+    root_path="/api",
+    swagger_ui_parameters={
+        "persistAuthorization": True
+    },
 )
 
 app.mount("/static", StaticFiles(directory='static'), name="static")

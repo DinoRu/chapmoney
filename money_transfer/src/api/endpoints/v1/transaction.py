@@ -5,6 +5,7 @@ from typing import List, Optional, Annotated
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from dotenv import load_dotenv
 from fastapi import APIRouter, status, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from sqlalchemy import or_
@@ -22,7 +23,10 @@ from src.schemas.notifications import Notification, NotificationResponse, Notifi
 from src.schemas.transaction import TransactionRead, TransactionCreate, TransactionUpdate, EmailRequest, EmailSchema
 from src.firebase import messaging
 from src.utils.email_utils import send_transaction_email
+from src.utils.mailer_send import send_email_smtp
 from src.utils.notification_utils import send_notification, send_one_signal_notification, get_player_ids_for_users
+
+from mailersend import emails
 
 import logging
 
@@ -48,6 +52,58 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+
+load_dotenv()
+api_key = os.getenv("MAILERSEND_API_KEY")
+sender_email = os.getenv("SENDER_MAIL")
+
+
+
+def notify_admin():
+    mailer = emails.NewEmail(api_key)
+
+    mail_body = {}
+
+    mail_from = {
+        "name": "Chapmoney",
+        "email": "contact@chapmoney.org",
+    }
+
+    recipients = [
+        {
+            "name": "Admin",
+            "email": "contact@chapmoney.org",
+        }
+    ]
+
+    # mail_body = emails.NewEmail(
+    #     from_={"email": os.getenv("SENDER_EMAIL"), "name": "ChapMoney"},
+    #     to=[{"email": "diarra.msa@gmail.com", "name": "Admin"}],
+    #     subject="Nouvelle transaction",
+    #     html=f"<p>Nouveau transfert</p>",
+    #     text=f"Un utilisateur a initié un transfert."
+    # )
+
+    mailer.set_mail_from(mail_from, mail_body)
+    mailer.set_mail_to(recipients, mail_body)
+    mailer.set_subject("Nouvelle transaction", mail_body)
+    mailer.set_html_content("Nouvelle transaction", mail_body)
+    mailer.set_plaintext_content("Un utilisateur a initiée un transfert.", mail_body)
+
+    response = mailer.send(mail_body)
+    print(response)
+
+
+@router.post('/mailer-send')
+async def test_mailsender(background_tasks: BackgroundTasks):
+    send_email_smtp(
+        to_email="diarra.msa@gmail.com",
+        subject="Nouvelle transaction en attente de validation",
+        html_body="<p>Un utilisateur a initié une transaction.</p>",
+        text_body="Un utilisateur a initié une transaction."
+    )
+
+    return {"message": "Email was sent🎉"}
 
 async def get_transaction_or_404(id: uuid.UUID, session: AsyncSession = Depends(get_session)):
     stmt = select(Transaction).options(selectinload(Transaction.sender)).where(Transaction.id == id)
@@ -124,6 +180,7 @@ async def get_user_transactions(
             .where(Transaction.is_hidden == False)
 
     if status:
+
         stmt = stmt.where(Transaction.status == status)
 
     stmt = stmt.order_by(Transaction.timestamp.desc())\
@@ -282,7 +339,7 @@ async def send_transaction_notification(
                 "status": "validé"
             }
         )
-    await send_one_signal_notification(notification, session)
+    background_tasks.add_task(send_one_signal_notification, notification, session)
     return {"status": "notification_queued"}
 
 

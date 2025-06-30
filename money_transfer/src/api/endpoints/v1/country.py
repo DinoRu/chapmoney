@@ -53,12 +53,23 @@ async def add_country(
 	currency = currency_result.scalar_one_or_none()
 	if not currency:
 		raise HTTPException(status_code=404, detail="Currency not found")
+
+	# Pour les pays virtuels (cryptos), désactiver les champs de téléphone
+	if country_data.is_virtual:
+		if not currency.is_crypto:
+			raise HTTPException(
+				status_code=400,
+				detail="Virtual countries must use crypto currencies"
+			)
+		country_data.dial_code = None
+		country_data.phone_pattern = None
+
 	country = Country(**country_data.dict())
 	session.add(country)
 	await session.commit()
 	await session.refresh(country)
 
-
+	# Récupérer le pays avec ses relations
 	stmt = select(Country).options(
 		selectinload(Country.currency),
 		selectinload(Country.payment_types),
@@ -66,9 +77,7 @@ async def add_country(
 	).where(Country.id == country.id)
 
 	result = await session.execute(stmt)
-	country_with_relations = result.scalar_one()
-	return country_with_relations
-
+	return result.scalar_one()
 
 @router.patch("/{country_id}/", response_model=CountryModel, dependencies=[Depends(admin_required)])
 async def update_country(

@@ -18,6 +18,8 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { useConfirm } from 'material-ui-confirm';
 import api from '../api';
@@ -68,9 +70,9 @@ const CurrenciesManagement = () => {
     }
   };
 
-  const handleCreateCurrency = async (code) => {
+  const handleCreateCurrency = async (data) => {
     try {
-      await api.post('/currency/', { code });
+      await api.post('/currency/', data);
       fetchData();
       setOpenDialog(false);
     } catch (error) {
@@ -145,11 +147,54 @@ const CurrenciesManagement = () => {
 // CurrencyDialog.jsx (inchangé)
 const CurrencyDialog = ({ open, onClose, onSubmit }) => {
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [symbol, setSymbol] = useState('');
+  const [isCrypto, setIsCrypto] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!code) newErrors.code = 'Code requis';
+
+    if (isCrypto) {
+      if (!name) newErrors.name = 'Nom requis';
+      if (!symbol) newErrors.symbol = 'Symbole requis';
+    } else {
+      if (code.length !== 3) {
+        newErrors.code = 'Le code doit avoir 3 caractères';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = () => {
-    onSubmit(code);
-    setCode('');
+    if (!validate()) return;
+
+    const data = {
+      code,
+      is_crypto: isCrypto,
+    };
+
+    if (isCrypto) {
+      data.name = name;
+      data.symbol = symbol;
+    }
+
+    onSubmit(data);
+    resetForm();
     onClose();
+  };
+
+  const resetForm = () => {
+    setCode('');
+    setName('');
+    setSymbol('');
+    setIsCrypto(false);
+    setErrors({});
   };
 
   return (
@@ -157,15 +202,51 @@ const CurrencyDialog = ({ open, onClose, onSubmit }) => {
       <DialogTitle>Nouvelle devise</DialogTitle>
       <DialogContent>
         <Box component="form" sx={{ mt: 2 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isCrypto}
+                onChange={(e) => setIsCrypto(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Crypto-monnaie"
+            sx={{ mb: 2 }}
+          />
           <TextField
             label="Code ISO (ex: USD)"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             fullWidth
             required
-            inputProps={{ maxLength: 3 }}
-            sx={{ mt: 2 }}
+            inputProps={{ maxLength: 10 }}
+            sx={{ mt: 2, mb: 2 }}
           />
+
+          {isCrypto && (
+            <>
+              <TextField
+                label="Nom complet"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                fullWidth
+                required
+                error={!!errors.name}
+                helperText={errors.name}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                label="Symbole"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                fullWidth
+                required
+                error={!!errors.symbol}
+                helperText={errors.symbol}
+              />
+            </>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -173,7 +254,7 @@ const CurrencyDialog = ({ open, onClose, onSubmit }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!code || code.length !== 3}
+          disabled={!code || (isCrypto ? !name || !symbol : code.length !== 3)}
         >
           Créer
         </Button>

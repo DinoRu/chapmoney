@@ -21,11 +21,12 @@ class TransactionBase(BaseModel):
     conversion_rate: Decimal
     payment_type: str
     recipient_name: str
-    recipient_phone: str
-    recipient_type: str
+    recipient_phone: Optional[str]
+    recipient_type: Optional[str]
     include_fee: bool
     fee_amount: int
-
+    sender_crypto_address: Optional[str] = None
+    receiver_crypto_address: Optional[str] = None
 
 
 class TransactionCreate(TransactionBase):

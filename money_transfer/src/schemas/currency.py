@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -14,6 +14,9 @@ class BaseSchema(BaseModel):
 
 class CurrencyCreate(BaseSchema):
     code: str
+    name: Optional[str] = None
+    symbol: Optional[str] = None
+    is_crypto: bool = False
 
 
 class CurrencyModel(BaseSchema):
@@ -21,13 +24,16 @@ class CurrencyModel(BaseSchema):
     code: str
     name: str
     symbol: str
+    is_crypto: bool
+
 
 class CountryBase(BaseSchema):
     name: str
     code_iso: str
-    dial_code: str
-    phone_pattern: str
+    dial_code: Optional[str] = None
+    phone_pattern: Optional[str] = None
     can_send: bool = True
+    is_virtual: bool
 
 class CountryCreate(CountryBase):
     currency_id: uuid.UUID

@@ -1,6 +1,11 @@
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from dotenv import load_dotenv
+from mailersend import emails
+from resend import api_key
 
 from src.celery import celery_app
 from src.config import settings
@@ -11,7 +16,7 @@ SMTP_USER = "chapmoney.org"
 SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
 ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
 
-USER_MAIL = "chapmoneyapp@chapmoney.org"
+USER_MAIL = "diarra.msa@gmail.com"
 
 dashboard_url = settings.ADMIN_DASHBOARD_URL
 
@@ -127,7 +132,7 @@ def send_transaction_email(self, transaction_id: str):
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", USER_MAIL, msg.as_string())
+        server.sendmail("chapmoneyapp@chapmoney.org", ["contact@chapmoney.org"], msg.as_string())
 
 
 @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
@@ -224,7 +229,7 @@ def send_password_reset_email(user_email: str, reset_link: str):
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", user_email, msg.as_string())
+        server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
 
 
 @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
@@ -332,4 +337,5 @@ def send_password_reset_otp(user_email: str, otp_code: str):
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", user_email, msg.as_string())
+        server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
+

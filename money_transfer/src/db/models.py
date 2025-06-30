@@ -67,6 +67,8 @@ class Currency(SQLModel, table=True):
     name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False))
     symbol: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
 
+    is_crypto: bool = Field(default=False, sa_column=Column(pg.BOOLEAN, nullable=False))
+
     countries: List["Country"] = Relationship(back_populates='currency')
 
 
@@ -74,14 +76,15 @@ class Country(SQLModel, table=True):
     __tablename__ = 'countries'
     id:uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
     name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
-    code_iso: str = Field(sa_column=Column(pg.VARCHAR(2), nullable=False, unique=True))
+    code_iso: str = Field(sa_column=Column(pg.VARCHAR(10), nullable=False, unique=True))
     currency_id: uuid.UUID = Field(foreign_key='currencies.id', nullable=False)
-    dial_code: str = Field(sa_column=Column(pg.VARCHAR(4)))
-    phone_pattern: str = Field(sa_column=Column(pg.VARCHAR))
+    dial_code: Optional[str] = Field(sa_column=Column(pg.VARCHAR(4)))
+    phone_pattern: Optional[str] = Field(sa_column=Column(pg.VARCHAR))
     can_send: bool = Field(
         sa_column=Column(pg.BOOLEAN, nullable=False, server_default='true'),
         description="Détermine si le pays peut envoyer de l'argent"
     )
+    is_virtual: bool = Field(default=False, sa_column=Column(pg.BOOLEAN, nullable=False))
     currency: "Currency" = Relationship(back_populates='countries')
     payment_types: List["PaymentType"] = Relationship(back_populates="country", cascade_delete=True)
     receiving_types: List["ReceivingType"] = Relationship(back_populates="country", cascade_delete=True)
@@ -97,9 +100,15 @@ class Rate(SQLModel, table=True):
 
 class ReceivingType(SQLModel, table=True):
     __tablename__ = "receiving_type"
-    __table_args__ = (Index('idx_receiving_type', 'type'),)
+    __table_args__ = (
+        Index('idx_receiving_type', 'type'),
+        UniqueConstraint('is_crypto_receiver', 'type', 'network', 'country_id', name="uix_receiving_type_composite")
+    )
     id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
-    type: str = Field(sa_column=Column(pg.VARCHAR, nullable=False))
+    is_crypto_receiver: bool = Field(sa_column=Column(pg.BOOLEAN, nullable=False))
+    type: Optional[str] = Field(sa_column=Column(pg.VARCHAR, nullable=True))
+    # Nouveau champ pour la blockchain
+    network: Optional[str] = Field(sa_column=Column(pg.VARCHAR(20), nullable=True))
     country_id: uuid.UUID = Field(foreign_key='countries.id')
 
     country: "Country" = Relationship(back_populates="receiving_types")
@@ -107,17 +116,24 @@ class ReceivingType(SQLModel, table=True):
 
 class PaymentType(SQLModel, table=True):
     __tablename__ = "payment_type"
-    __table_args__ = (Index('idx_payment_type', 'type'),)
+    __table_args__ = (
+        Index('idx_payment_type', 'type'),
+        UniqueConstraint('is_crypto_pay', 'type', 'network', 'country_id', name="uix_payment_type_composite")
+    )
+
 
     id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
-    type: str = Field(sa_column=Column(pg.VARCHAR(50), nullable=False))
+    is_crypto_pay: bool = Field(sa_column=Column(pg.BOOLEAN, nullable=False))
+    type: Optional[str] = Field(sa_column=Column(pg.VARCHAR(50), nullable=True))
+    # Nouveau champ pour la blockchain (ex: "TRC20", "ERC20")
+    network: Optional[str] = Field(sa_column=Column(pg.VARCHAR(20), nullable=True))
+    crypto_address: Optional[str] = Field(sa_column=Column(pg.VARCHAR(250), nullable=True))
     owner_full_name: str = Field(sa_column=Column(pg.VARCHAR(50), nullable=False))
-    phone_number: str | None = Field(sa_column=Column(pg.VARCHAR(20), default=None))
-    account_number: str | None = Field(sa_column=Column(pg.VARCHAR(20), default=None))
+    # Devenus optionnels pour les cryptos
+    phone_number: Optional[str] = Field(sa_column=Column(pg.VARCHAR(20), default=None))
+    account_number: Optional[str] = Field(sa_column=Column(pg.VARCHAR(20), default=None))
     country_id: uuid.UUID = Field(foreign_key="countries.id")
     country: "Country" = Relationship(back_populates="payment_types")
-
-
 
 
 def generate_reference():
@@ -143,12 +159,15 @@ class Transaction(SQLModel, table=True):
     conversion_rate: Decimal = Field(sa_column=Column(DECIMAL(precision=10, scale=2)))
     payment_type: str = Field(sa_column=Column(pg.VARCHAR(50)))
     recipient_name: str = Field(sa_column=Column(pg.VARCHAR(50)))
-    recipient_phone: str = Field(sa_column=Column(pg.VARCHAR(50)))
+    # Devenu optionnel (non utilisé pour les cryptos)
+    recipient_phone: Optional[str] = Field(sa_column=Column(pg.VARCHAR(50), nullable=True))
     recipient_type: str = Field(sa_column=Column(pg.VARCHAR(50)))
     include_fee: bool = Field(sa_column=Column(pg.BOOLEAN, default=False))
     is_hidden: bool = Field(sa_column=Column(pg.BOOLEAN, default=False), default=False)
     fee_amount: int = Field(sa_column=Column(pg.INTEGER, nullable=False, default="0"))
     status: TransactionStatus = Field(sa_column=Column(pg.VARCHAR(20), nullable=False), default=TransactionStatus.PENDING)
+    # Nouveaux champs pour les adresses crypto
+    receiver_crypto_address: Optional[str] = Field(sa_column=Column(pg.VARCHAR(100), nullable=True))
 
     sender: User = Relationship(back_populates='transactions')
 

@@ -21,15 +21,33 @@ async def get_receiving_type_or_404(id: uuid.UUID, session: AsyncSession = Depen
 	return receiving_type
 
 @router.post("/type", status_code=status.HTTP_201_CREATED, response_model=ReceivingTypeRead, dependencies=[Depends(admin_required)])
-async def type_create(
-		data: ReceivingTypeCreate,
+async def create_receiving_method(
+		receiving_method: ReceivingTypeCreate,
 		session: AsyncSession = Depends(get_session)
 ):
-	type = ReceivingType(**data.dict())
-	session.add(type)
+
+	if receiving_method.is_crypto_receiver:
+		stmt = select(ReceivingType).where(
+			(ReceivingType.is_crypto_receiver == True) &
+			(ReceivingType.network == receiving_method.network) &
+			(ReceivingType.country_id == receiving_method.country_id)
+		)
+	else:
+		stmt = select(ReceivingType).where(
+			(ReceivingType.type == receiving_method.type) &
+			(ReceivingType.country_id == receiving_method.country_id)
+		)
+	result = await session.execute(stmt)
+	if result.scalar_one_or_none():
+		raise HTTPException(
+			status_code=400,
+			detail="Receiving method already exists for this country"
+		)
+	new_method = ReceivingType(**receiving_method.dict())
+	session.add(new_method)
 	await session.commit()
-	await session.refresh(type)
-	return type
+	await session.refresh(new_method)
+	return new_method
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[ReceivingTypeRead])
 async def get_receiving_types(session: AsyncSession = Depends(get_session)):
