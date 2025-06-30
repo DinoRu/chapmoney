@@ -47,7 +47,7 @@ class Settings(BaseSettings):
         return self.DB_URL if self.ENV == 'docker' else self.DATABASE_URL
 
     def active_redis_url(self):
-        return self.REDIS_URL if self.ENV == 'docker' else self.REDIS_URL_LOCAL
+        return self.REDIS_URL
 
     def active_rabbitmq_url(self):
         return self.RABBITMQ_URL if self.ENV == "docker" else self.REDIS_URL_LOCAL
