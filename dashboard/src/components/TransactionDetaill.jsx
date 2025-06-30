@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack,
-  Paid,
   Person,
   Phone,
   WhatsApp,
