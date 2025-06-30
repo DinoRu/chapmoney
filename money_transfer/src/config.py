@@ -57,7 +57,7 @@ settings = Settings()
 
 # Celery configuration
 CELERY_BROKER_URL = settings.active_rabbitmq_url()
-CELERY_BACKEND_URL = settings.active_redis_url()
+CELERY_BACKEND_URL = settings.REDIS_URL
 
 # Celery Serializer for tokens (e.g., email confirmation)
 serializer = URLSafeTimedSerializer(
