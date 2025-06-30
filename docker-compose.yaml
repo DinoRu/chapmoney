@@ -118,6 +118,9 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx_proxy
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     volumes:
