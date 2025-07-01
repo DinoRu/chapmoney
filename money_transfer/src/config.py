@@ -1,3 +1,6 @@
+import os
+
+from dotenv import load_dotenv
 from itsdangerous import URLSafeTimedSerializer
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import logging
@@ -55,9 +58,10 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+load_dotenv()
 # Celery configuration
 CELERY_BROKER_URL = settings.active_rabbitmq_url()
-CELERY_BACKEND_URL = settings.REDIS_URL
+CELERY_BACKEND_URL = os.getenv("REDIS_URL")
 
 # Celery Serializer for tokens (e.g., email confirmation)
 serializer = URLSafeTimedSerializer(

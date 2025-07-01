@@ -1,7 +1,7 @@
 from celery import Celery
 from src.config import CELERY_BROKER_URL, CELERY_BACKEND_URL
 
-celery_app = Celery("ChapMoney App", broker=CELERY_BROKER_URL, backend=CELERY_BACKEND_URL)
+celery_app = Celery("ChapMoney App", broker=CELERY_BROKER_URL, backend="redis://redis:6379/0")
 
 celery_app.conf.update(
     broker_connection_retry_on_startup=True,
