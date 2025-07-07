@@ -23,7 +23,7 @@ services:
     depends_on:
       - nginx_proxy
     environment:
-      DEFAULT_EMAIL: ton@email.com  # ⚠️ Remplace par ton vrai email
+      DEFAULT_EMAIL: diarra.msa@email.com  # ⚠️ Remplace par ton vrai email
     volumes:
       - /etc/nginx/certs:/etc/nginx/certs
       - /etc/nginx/vhost.d
@@ -37,6 +37,7 @@ services:
       context: ./money_transfer
       dockerfile: Dockerfile
     container_name: api
+    restart: always
     expose:
       - "8000"
     env_file:
