@@ -11,9 +11,9 @@ services:
     environment:
       - HTTPS_METHOD=redirect 
     volumes:
-      - /etc/nginx/certs:/etc/nginx/certs:ro
-      - /etc/nginx/vhost.d
-      - /usr/share/nginx/html
+      - ./certs:/etc/nginx/certs  # Changement important: :ro supprimé
+      - ./vhost.d:/etc/nginx/vhost.d:ro
+      - ./html:/usr/share/nginx/html  # Volume persistant pour les challenges
       - /var/run/docker.sock:/tmp/docker.sock:ro
     labels:
       - com.github.nginx-proxy.nginx-proxy
@@ -31,10 +31,9 @@ services:
       DEFAULT_EMAIL: diarra.msa@gmail.com
       NGINX_PROXY_CONTAINER: nginx_proxy
     volumes:
-      - /etc/nginx/certs:/etc/nginx/certs
-      - /etc/nginx/vhost.d
-      - /usr/share/nginx/html
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
     networks:
       - app_network
 
