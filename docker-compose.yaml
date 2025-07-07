@@ -27,6 +27,7 @@ services:
       - nginx_proxy
     environment:
       DEFAULT_EMAIL: diarra.msa@gmail.com
+      NGINX_PROXY_CONTAINER: nginx_proxy
     volumes:
       - /etc/nginx/certs:/etc/nginx/certs
       - /etc/nginx/vhost.d
