@@ -14,7 +14,7 @@ services:
       - ./certs:/etc/nginx/certs  # Changement important: :ro supprimé
       - ./vhost.d:/etc/nginx/vhost.d:ro
       - ./html:/usr/share/nginx/html  # Volume persistant pour les challenges
-      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro,z
     labels:
       - com.github.nginx-proxy.nginx-proxy
     networks:
@@ -34,6 +34,7 @@ services:
       - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d
       - ./html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro,z
     networks:
       - app_network
 
