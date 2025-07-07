@@ -1,35 +1,72 @@
 version: '3.9'
 
 services:
-  api:
-    container_name: api
-    build:
-      context: ./money_transfer
-      dockerfile: Dockerfile
+  nginx_proxy:
+    image: nginxproxy/nginx-proxy:latest
+    container_name: nginx_proxy
     restart: always
-    env_file:
-      - .env
-    environment:
-      ENV: docker
-      DB_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    command: >
-      bash -c "uvicorn src:app --host 0.0.0.0 --port=8000"
-    depends_on:
-      - db
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/nginx/certs:/etc/nginx/certs:ro
+      - /etc/nginx/vhost.d
+      - /usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - app_network
 
-  nginx_proxy:
+  nginx_letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx_letsencrypt
+    restart: always
+    depends_on:
+      - nginx_proxy
+    environment:
+      DEFAULT_EMAIL: ton@email.com  # ⚠️ Remplace par ton vrai email
+    volumes:
+      - /etc/nginx/certs:/etc/nginx/certs
+      - /etc/nginx/vhost.d
+      - /usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: ./money_transfer
+      dockerfile: Dockerfile
+    container_name: api
+    expose:
+      - "8000"
+    env_file:
+      - ./money_transfer/.env
+    environment:
+      ENV: docker
+      VIRTUAL_HOST: api.chapdemo.ru
+      LETSENCRYPT_HOST: api.chapdemo.ru
+      LETSENCRYPT_EMAIL: ton@email.com
+      DB_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    networks:
+      - app_network
+    depends_on:
+      - db
+
+  frontend:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
-    container_name: nginx_proxy
-    ports:
-      - "80:80"
-    depends_on:
-      - api
+    container_name: frontend
+    expose:
+      - "80"
+    environment:
+      VIRTUAL_HOST: www.chapdemo.ru,chapdemo.ru
+      LETSENCRYPT_HOST: www.chapdemo.ru,chapdemo.ru
+      LETSENCRYPT_EMAIL: ton@email.com
     networks:
       - app_network
+    depends_on:
+      - api
 
   db:
     image: postgres:15
@@ -39,28 +76,18 @@ services:
       - ./money_transfer/.env
     volumes:
       - money_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - app_network
 
   redis:
     image: redis:latest
     container_name: redis
-    environment:
-      ENV: docker
-      REDIS_URL: redis://redis:6379/0
-    ports:
-      - "6379:6379"
     networks:
       - app_network
 
   rabbitmq:
     image: rabbitmq:3-management
-    hostname: rabbitmq
+    container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -79,14 +106,12 @@ services:
       bash -c "cd /app && celery -A src.celery:celery_app worker --loglevel=info -E"
     env_file:
       - ./money_transfer/.env
-    environment:
-      ENV: docker 
+    networks:
+      - app_network
     depends_on:
       - rabbitmq
       - redis
       - api
-    networks:
-      - app_network
 
   flower:
     build:
@@ -100,13 +125,12 @@ services:
       - .env
     environment:
       FLOWER_BASIC_AUTH: ${FLOWER_BASIC_AUTH}
-      ENV: docker
+    networks:
+      - app_network
     depends_on:
       - rabbitmq
       - redis
       - api
-    networks:
-      - app_network
 
 volumes:
   money_data:
