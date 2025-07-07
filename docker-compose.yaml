@@ -8,6 +8,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - HTTPS_METHOD=redirect 
     volumes:
       - /etc/nginx/certs:/etc/nginx/certs:ro
       - /etc/nginx/vhost.d
@@ -72,6 +74,8 @@ services:
     networks:
       - app_network
     depends_on:
+      - nginx_proxy
+      - nginx_letsencrypt
       - api
 
   db:
