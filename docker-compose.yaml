@@ -13,8 +13,11 @@ services:
       - /etc/nginx/vhost.d
       - /usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      - com.github.nginx-proxy.nginx-proxy
     networks:
       - app_network
+
 
   nginx_letsencrypt:
     image: nginxproxy/acme-companion
