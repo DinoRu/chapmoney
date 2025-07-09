@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   DataGrid,
   GridActionsCellItem,
@@ -24,222 +30,140 @@ import {
 import { useConfirm } from 'material-ui-confirm';
 import api from '../api';
 
-const CurrenciesManagement = () => {
-  const [currencies, setCurrencies] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const confirm = useConfirm();
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/currency/currencies/');
-      const withId = response.data.map((currency) => ({
-        ...currency,
-        id: currency.id, // UUID bien présent
-      }));
-      setCurrencies(withId);
-      setError('');
-    } catch (err) {
-      setError('Erreur lors du chargement des devises');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const CurrencyDialog = ({ open, onClose, onSubmit }) => {
+  const [formState, setFormState] = useState({
+    code: '',
+    name: '',
+    symbol: '',
+    isCrypto: false,
+  });
+  const [errors, setErrors] = useState({});
+  const codeRef = useRef();
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleDelete = async (id) => {
-    try {
-      await confirm({
-        description: 'Êtes-vous sûr de vouloir supprimer cette devise ?',
-      });
-
-      await api.delete(`/currency/${id}`);
-      fetchData();
-    } catch (error) {
-      // Annulation par l'utilisateur
-      if (error.name === 'CanceledError') return;
-
-      console.error('Erreur lors de la suppression :', error);
-      setError('Erreur lors de la suppression');
+    if (open && codeRef.current) {
+      setTimeout(() => codeRef.current.focus(), 100);
     }
-  };
+  }, [open]);
 
-  const handleCreateCurrency = async (data) => {
-    try {
-      await api.post('/currency/', data);
-      fetchData();
-      setOpenDialog(false);
-    } catch (error) {
-      console.error('Erreur lors de la création :', error);
-      setError(error.response?.data?.detail || 'Erreur lors de la création');
-    }
-  };
-
-  const columns = [
-    { field: 'code', headerName: 'Code', flex: 1 },
-    { field: 'name', headerName: 'Nom', flex: 1 },
-    { field: 'symbol', headerName: 'Symbole', flex: 1 },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Actions',
-      width: 100,
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={<DeleteIcon color="error" />}
-          label="Supprimer"
-          onClick={() => handleDelete(params.row.id)}
-        />,
-      ],
-    },
-  ];
-
-  if (loading) return <CircularProgress sx={{ m: 4 }} />;
-
-  return (
-    <Box sx={{ height: 600, width: '100%', p: 3 }}>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-        <Typography variant="h4">Gestion des devises</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenDialog(true)}
-        >
-          Ajouter une devise
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <DataGrid
-        rows={currencies}
-        columns={columns}
-        getRowId={(row) => row.id} // UUID ici
-        components={{
-          Toolbar: () => (
-            <GridToolbarContainer sx={{ p: 2 }}>
-              <GridToolbarFilterButton />
-              <GridToolbarExport />
-            </GridToolbarContainer>
-          ),
-        }}
-      />
-
-      <CurrencyDialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        onSubmit={handleCreateCurrency}
-      />
-    </Box>
-  );
-};
-
-// CurrencyDialog.jsx (inchangé)
-const CurrencyDialog = ({ open, onClose, onSubmit }) => {
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [symbol, setSymbol] = useState('');
-  const [isCrypto, setIsCrypto] = useState(false);
-  // const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
+  const validateForm = useCallback(() => {
     const newErrors = {};
+    const { code, name, symbol, isCrypto } = formState;
 
-    if (!code) newErrors.code = 'Code requis';
+    if (!code.trim()) {
+      newErrors.code = 'Code requis';
+    } else if (!isCrypto && code.length !== 3) {
+      newErrors.code = 'Le code doit avoir 3 caractères';
+    }
 
     if (isCrypto) {
-      if (!name) newErrors.name = 'Nom requis';
-      if (!symbol) newErrors.symbol = 'Symbole requis';
-    } else {
-      if (code.length !== 3) {
-        newErrors.code = 'Le code doit avoir 3 caractères';
-      }
+      if (!name.trim()) newErrors.name = 'Nom requis';
+      if (!symbol.trim()) newErrors.symbol = 'Symbole requis';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formState]);
 
-  const handleSubmit = () => {
-    if (!validate()) return;
+  const handleSubmit = useCallback(() => {
+    if (!validateForm()) return;
 
-    const data = {
+    const { code, isCrypto, name, symbol } = formState;
+    onSubmit({
       code,
       is_crypto: isCrypto,
-    };
+      ...(isCrypto && { name, symbol }),
+    });
 
-    if (isCrypto) {
-      data.name = name;
-      data.symbol = symbol;
-    }
-
-    onSubmit(data);
-    resetForm();
-    onClose();
-  };
-
-  const resetForm = () => {
-    setCode('');
-    setName('');
-    setSymbol('');
-    setIsCrypto(false);
+    setFormState({
+      code: '',
+      name: '',
+      symbol: '',
+      isCrypto: false,
+    });
     setErrors({});
-  };
+    onClose();
+  }, [formState, onClose, onSubmit, validateForm]);
+
+  const handleChange = useCallback(
+    (field) => (e) => {
+      const value =
+        field === 'isCrypto'
+          ? e.target.checked
+          : field === 'code'
+          ? e.target.value.toUpperCase()
+          : e.target.value;
+
+      setFormState((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      // Clear error when user types
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+      }
+    },
+    [errors],
+  );
+
+  const isFormValid = useMemo(() => {
+    const { code, isCrypto, name, symbol } = formState;
+    return code.length > 0 && (!isCrypto || (name && symbol));
+  }, [formState]);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onExited={() => setErrors({})}
+      fullWidth
+      maxWidth="sm"
+    >
       <DialogTitle>Nouvelle devise</DialogTitle>
       <DialogContent>
-        <Box component="form" sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2 }}>
           <FormControlLabel
             control={
               <Checkbox
-                checked={isCrypto}
-                onChange={(e) => setIsCrypto(e.target.checked)}
+                checked={formState.isCrypto}
+                onChange={handleChange('isCrypto')}
                 color="primary"
               />
             }
             label="Crypto-monnaie"
             sx={{ mb: 2 }}
           />
+
           <TextField
             label="Code ISO (ex: USD)"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            value={formState.code}
+            onChange={handleChange('code')}
             fullWidth
             required
             inputProps={{ maxLength: 10 }}
-            sx={{ mt: 2, mb: 2 }}
+            inputRef={codeRef}
+            error={!!errors.code}
+            helperText={errors.code}
+            sx={{ mb: 2 }}
           />
 
-          {isCrypto && (
+          {formState.isCrypto && (
             <>
               <TextField
                 label="Nom complet"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={formState.name}
+                onChange={handleChange('name')}
                 fullWidth
                 required
                 error={!!errors.name}
                 helperText={errors.name}
                 sx={{ mb: 2 }}
               />
-
               <TextField
                 label="Symbole"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
+                value={formState.symbol}
+                onChange={handleChange('symbol')}
                 fullWidth
                 required
                 error={!!errors.symbol}
@@ -254,12 +178,163 @@ const CurrencyDialog = ({ open, onClose, onSubmit }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!code || (isCrypto ? !name || !symbol : code.length !== 3)}
+          disabled={!isFormValid}
         >
           Créer
         </Button>
       </DialogActions>
     </Dialog>
+  );
+};
+
+const CustomToolbar = () => (
+  <GridToolbarContainer sx={{ p: 1 }}>
+    <GridToolbarFilterButton />
+    <GridToolbarExport />
+  </GridToolbarContainer>
+);
+
+const CurrenciesManagement = () => {
+  const [currencies, setCurrencies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const confirm = useConfirm();
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/currency/currencies/');
+      setCurrencies(response.data);
+      setError('');
+    } catch (err) {
+      setError('Erreur lors du chargement des devises');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const fetchWithCancel = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/currency/currencies/', {
+          signal: abortController.signal,
+        });
+        setCurrencies(response.data);
+      } catch (err) {
+        if (!abortController.signal.aborted) {
+          setError('Erreur lors du chargement des devises');
+          console.error(err);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchWithCancel();
+    return () => abortController.abort();
+  }, []);
+
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        await confirm({
+          description: 'Êtes-vous sûr de vouloir supprimer cette devise ?',
+        });
+        await api.delete(`/currency/${id}`);
+        setCurrencies((prev) => prev.filter((currency) => currency.id !== id));
+      } catch (err) {
+        if (err.name !== 'CanceledError') {
+          setError('Erreur lors de la suppression');
+          console.error(err);
+        }
+      }
+    },
+    [confirm],
+  );
+
+  const handleCreateCurrency = useCallback(async (data) => {
+    try {
+      const response = await api.post('/currency/', data);
+      setCurrencies((prev) => [...prev, response.data]);
+      setDialogOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Erreur lors de la création');
+      console.error(err);
+    }
+  }, []);
+
+  const columns = useMemo(
+    () => [
+      { field: 'code', headerName: 'Code', flex: 1 },
+      { field: 'name', headerName: 'Nom', flex: 1 },
+      { field: 'symbol', headerName: 'Symbole', flex: 1 },
+      {
+        field: 'actions',
+        type: 'actions',
+        headerName: 'Actions',
+        width: 100,
+        getActions: (params) => [
+          <GridActionsCellItem
+            icon={<DeleteIcon color="error" />}
+            label="Supprimer"
+            onClick={() => handleDelete(params.id)}
+          />,
+        ],
+      },
+    ],
+    [handleDelete],
+  );
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ height: '70vh', width: '100%', p: 3 }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
+        <Typography variant="h4">Gestion des devises</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+        >
+          Ajouter une devise
+        </Button>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
+      <DataGrid
+        rows={currencies}
+        columns={columns}
+        getRowId={(row) => row.id}
+        components={{ Toolbar: CustomToolbar }}
+        disableSelectionOnClick
+        density="comfortable"
+        autoPageSize
+      />
+
+      <CurrencyDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSubmit={handleCreateCurrency}
+      />
+    </Box>
   );
 };
 

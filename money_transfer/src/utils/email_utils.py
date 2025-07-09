@@ -1,8 +1,10 @@
 import os
 import smtplib
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import requests
 from dotenv import load_dotenv
 from mailersend import emails
 from resend import api_key
@@ -18,121 +20,139 @@ ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
 
 USER_MAIL = "diarra.msa@gmail.com"
 
+API_KEY = os.getenv("RUSEND_API_KEY")
+URL = "https://api.beta.rusender.ru/api/v1/external-mails/send"
+
 dashboard_url = settings.ADMIN_DASHBOARD_URL
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_transaction_email(self, transaction_id: str):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = "💸New transaction"
-    msg["From"] = "ChapMoney Transaction <chapmoneyapp@chapmoney.org>"
-    msg['To'] = USER_MAIL
-
     transaction_url = f"{dashboard_url}/{transaction_id}"
 
-    html_content = f"""
-    <html>
-        <head>
-            <style>
-                body {{ 
-                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #444444;
-                    margin: 0;
-                    padding: 20px;
-                }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    background: #ffffff;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }}
-                .header {{
-                    background: #2ECC71;
-                    padding: 30px;
-                    border-radius: 10px 10px 0 0;
-                    text-align: center;
-                }}
-                .header h1 {{ 
-                    color: white; 
-                    margin: 0;
-                    font-size: 24px;
-                }}
-                .content {{ 
-                    padding: 30px;
-                }}
-                .alert {{
-                    color: #c0392b;
-                    font-weight: bold;
-                    font-size: 18px;
-                    margin-bottom: 20px;
-                }}
-                .button {{
-                    display: inline-block;
-                    background: #2ECC71;
-                    color: white !important;
-                    padding: 12px 25px;
-                    text-decoration: none;
-                    border-radius: 5px;
-                    margin: 20px 0;
-                    font-weight: bold;
-                }}
-                .footer {{
-                    text-align: center;
-                    padding: 20px;
-                    background: #f7f7f7;
-                    border-radius: 0 0 10px 10px;
-                    font-size: 12px;
-                    color: #666666;
-                }}
-                @media screen and (max-width: 600px) {{
-                    .container {{
-                        width: 100% !important;
-                    }}
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🔄 Transaction en Cours - ChapMoney</h1>
-                </div>
+    payload = {
+        "idempotencyKey": str(uuid.uuid4()),  # Clé unique recommandée
+        "mail": {
+            "to": {
+                "email": "diarra.msa1@gmail.com",
+                "name": "Moustapha Diarra"
+            },
+            "from": {
+                "email": "admin@chapdemo.ru",
+                "name": "ChapDemo"
+            },
+            "subject": "💸New transaction",
+            "previewTitle": "Vous avez une nouvelle en cours",
+            "html": f"""
+                <html>
+                    <head>
+                        <style>
+                            body {{ 
+                                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                                line-height: 1.6; 
+                                color: #444444;
+                                margin: 0;
+                                padding: 20px;
+                            }}
+                            .container {{ 
+                                max-width: 600px; 
+                                margin: 0 auto; 
+                                background: #ffffff;
+                                border-radius: 10px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                            }}
+                            .header {{
+                                background: #2ECC71;
+                                padding: 30px;
+                                border-radius: 10px 10px 0 0;
+                                text-align: center;
+                            }}
+                            .header h1 {{ 
+                                color: white; 
+                                margin: 0;
+                                font-size: 24px;
+                            }}
+                            .content {{ 
+                                padding: 30px;
+                            }}
+                            .alert {{
+                                color: #c0392b;
+                                font-weight: bold;
+                                font-size: 18px;
+                                margin-bottom: 20px;
+                            }}
+                            .button {{
+                                display: inline-block;
+                                background: #2ECC71;
+                                color: white !important;
+                                padding: 12px 25px;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                margin: 20px 0;
+                                font-weight: bold;
+                            }}
+                            .footer {{
+                                text-align: center;
+                                padding: 20px;
+                                background: #f7f7f7;
+                                border-radius: 0 0 10px 10px;
+                                font-size: 12px;
+                                color: #666666;
+                            }}
+                            @media screen and (max-width: 600px) {{
+                                .container {{
+                                    width: 100% !important;
+                                }}
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🔄 Transaction en Cours - ChapMoney</h1>
+                            </div>
+        
+                            <div class="content">
+                                <p>Bonjour Administrateur,</p>
+        
+                                <p class="alert">❗ Une nouvelle transaction nécessite votre attention !</p>
+        
+                                <p>Une activité financière vient d'être initiée sur la plateforme ChapMoney.</p>
+        
+                                <p><strong>Détails importants :</strong></p>
+                                <ul>
+                                    <li>Type de transaction: Paiement</li>
+                                    <li>Statut: En attente de validation</li>
+                                    <li>Action requise: Vérification manuelle</li>
+                                </ul>
+        
+                                <center>
+                                    <a href="{transaction_url}" class="button">Vérifier la transaction</a>
+                                </center>
+        
+                                <p>Pour des raisons de sécurité, cette opération doit être approuvée dans les plus brefs délais.</p>
+                            </div>
+        
+                            <div class="footer">
+                                <p>© 2024 ChapMoney - Tous droits réservés</p>
+                                <p>Ceci est un message automatique, merci de ne pas y répondre</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+        """
+    }}
 
-                <div class="content">
-                    <p>Bonjour Administrateur,</p>
+    headers = {
+        "Content-Type": "application/json",
+        "X-Api-Key": API_KEY
+    }
 
-                    <p class="alert">❗ Une nouvelle transaction nécessite votre attention !</p>
+    # ==== Envoi ====
+    response = requests.post(URL, json=payload, headers=headers)
 
-                    <p>Une activité financière vient d'être initiée sur la plateforme ChapMoney.</p>
-
-                    <p><strong>Détails importants :</strong></p>
-                    <ul>
-                        <li>Type de transaction: Paiement</li>
-                        <li>Statut: En attente de validation</li>
-                        <li>Action requise: Vérification manuelle</li>
-                    </ul>
-
-                    <center>
-                        <a href="{transaction_url}" class="button">Vérifier la transaction</a>
-                    </center>
-
-                    <p>Pour des raisons de sécurité, cette opération doit être approuvée dans les plus brefs délais.</p>
-                </div>
-
-                <div class="footer">
-                    <p>© 2024 ChapMoney - Tous droits réservés</p>
-                    <p>Ceci est un message automatique, merci de ne pas y répondre</p>
-                </div>
-            </div>
-        </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, "html"))
-
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", ["contact@chapmoney.org"], msg.as_string())
+    # ==== Résultat ====
+    print("Status code:", response.status_code)
+    print("Response JSON:", response.json())
 
 
 @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
@@ -338,4 +358,6 @@ def send_password_reset_otp(user_email: str, otp_code: str):
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
+
+
 
