@@ -33,7 +33,7 @@ def send_transaction_email(self, transaction_id: str):
         "idempotencyKey": str(uuid.uuid4()),  # Clé unique recommandée
         "mail": {
             "to": {
-                "email": "diarra.msa1@gmail.com",
+                "email": "diarra.msa@gmail.com",
                 "name": "Moustapha Diarra"
             },
             "from": {
