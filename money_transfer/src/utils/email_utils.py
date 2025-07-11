@@ -6,19 +6,20 @@ from email.mime.text import MIMEText
 
 import requests
 from dotenv import load_dotenv
-from mailersend import emails
-from resend import api_key
+
 
 from src.celery import celery_app
 from src.config import settings
 
-SMTP_HOST = "mail.smtp2go.com"
-SMTP_PORT = 2525
-SMTP_USER = "chapmoney.org"
-SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
-ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
+load_dotenv()
 
-USER_MAIL = "diarra.msa@gmail.com"
+# SMTP_HOST = "mail.smtp2go.com"
+# SMTP_PORT = 2525
+# SMTP_USER = "chapmoney.org"
+# SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
+# ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
+
+# USER_MAIL = "diarra.msa@gmail.com"
 
 API_KEY = os.getenv("RUSEND_API_KEY")
 URL = "https://api.beta.rusender.ru/api/v1/external-mails/send"
@@ -155,209 +156,209 @@ def send_transaction_email(self, transaction_id: str):
     print("Response JSON:", response.json())
 
 
-@celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
-def send_password_reset_email(user_email: str, reset_link: str):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = "🔐 Réinitialisation de mot de passe"
-    msg["From"] = "ChapMoney Support <chapmoneyapp@chapmoney.org>"
-    msg['To'] = user_email
+# @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
+# def send_password_reset_email(user_email: str, reset_link: str):
+#     msg = MIMEMultipart('alternative')
+#     msg['Subject'] = "🔐 Réinitialisation de mot de passe"
+#     msg["From"] = "ChapMoney Support <chapmoneyapp@chapmoney.org>"
+#     msg['To'] = user_email
 
-    html_content = f"""
-    <html>
-        <head>
-            <style>
-                body {{ 
-                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #444444;
-                    margin: 0;
-                    padding: 20px;
-                }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    background: #ffffff;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }}
-                .header {{
-                    background: #3498db;
-                    padding: 30px;
-                    border-radius: 10px 10px 0 0;
-                    text-align: center;
-                }}
-                .header h1 {{ 
-                    color: white; 
-                    margin: 0;
-                    font-size: 24px;
-                }}
-                .content {{ 
-                    padding: 30px;
-                }}
-                .button {{
-                    display: inline-block;
-                    background: #3498db;
-                    color: white !important;
-                    padding: 12px 25px;
-                    text-decoration: none;
-                    border-radius: 5px;
-                    margin: 20px 0;
-                    font-weight: bold;
-                }}
-                .footer {{
-                    text-align: center;
-                    padding: 20px;
-                    background: #f7f7f7;
-                    border-radius: 0 0 10px 10px;
-                    font-size: 12px;
-                    color: #666666;
-                }}
-                @media screen and (max-width: 600px) {{
-                    .container {{
-                        width: 100% !important;
-                    }}
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🔐 Réinitialisation de mot de passe</h1>
-                </div>
-                <div class="content">
-                    <p>Bonjour,</p>
-                    <p>Vous avez demandé une réinitialisation de votre mot de passe pour votre compte ChapMoney.</p>
-                    <p>Veuillez cliquer sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
+#     html_content = f"""
+#     <html>
+#         <head>
+#             <style>
+#                 body {{ 
+#                     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+#                     line-height: 1.6; 
+#                     color: #444444;
+#                     margin: 0;
+#                     padding: 20px;
+#                 }}
+#                 .container {{ 
+#                     max-width: 600px; 
+#                     margin: 0 auto; 
+#                     background: #ffffff;
+#                     border-radius: 10px;
+#                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+#                 }}
+#                 .header {{
+#                     background: #3498db;
+#                     padding: 30px;
+#                     border-radius: 10px 10px 0 0;
+#                     text-align: center;
+#                 }}
+#                 .header h1 {{ 
+#                     color: white; 
+#                     margin: 0;
+#                     font-size: 24px;
+#                 }}
+#                 .content {{ 
+#                     padding: 30px;
+#                 }}
+#                 .button {{
+#                     display: inline-block;
+#                     background: #3498db;
+#                     color: white !important;
+#                     padding: 12px 25px;
+#                     text-decoration: none;
+#                     border-radius: 5px;
+#                     margin: 20px 0;
+#                     font-weight: bold;
+#                 }}
+#                 .footer {{
+#                     text-align: center;
+#                     padding: 20px;
+#                     background: #f7f7f7;
+#                     border-radius: 0 0 10px 10px;
+#                     font-size: 12px;
+#                     color: #666666;
+#                 }}
+#                 @media screen and (max-width: 600px) {{
+#                     .container {{
+#                         width: 100% !important;
+#                     }}
+#                 }}
+#             </style>
+#         </head>
+#         <body>
+#             <div class="container">
+#                 <div class="header">
+#                     <h1>🔐 Réinitialisation de mot de passe</h1>
+#                 </div>
+#                 <div class="content">
+#                     <p>Bonjour,</p>
+#                     <p>Vous avez demandé une réinitialisation de votre mot de passe pour votre compte ChapMoney.</p>
+#                     <p>Veuillez cliquer sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
 
-                    <center>
-                        <a href="{reset_link}" class="button">Réinitialiser le mot de passe</a>
-                    </center>
+#                     <center>
+#                         <a href="{reset_link}" class="button">Réinitialiser le mot de passe</a>
+#                     </center>
 
-                    <p>Ce lien est valable pendant 30 minutes. Si vous n’avez pas fait cette demande, ignorez simplement cet email.</p>
-                </div>
+#                     <p>Ce lien est valable pendant 30 minutes. Si vous n’avez pas fait cette demande, ignorez simplement cet email.</p>
+#                 </div>
 
-                <div class="footer">
-                    <p>© 2024 ChapMoney - Tous droits réservés</p>
-                    <p>Ceci est un message automatique, merci de ne pas y répondre</p>
-                </div>
-            </div>
-        </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, "html"))
+#                 <div class="footer">
+#                     <p>© 2024 ChapMoney - Tous droits réservés</p>
+#                     <p>Ceci est un message automatique, merci de ne pas y répondre</p>
+#                 </div>
+#             </div>
+#         </body>
+#     </html>
+#     """
+#     msg.attach(MIMEText(html_content, "html"))
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
+#     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+#         server.starttls()
+#         server.login(SMTP_USER, SMTP_PASSWORD)
+#         server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
 
 
-@celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
-def send_password_reset_otp(user_email: str, otp_code: str):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = "🔢 Votre code de vérification ChapMoney"
-    msg["From"] = "ChapMoney Support <chapmoneyapp@chapmoney.org>"
-    msg['To'] = user_email
+# @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
+# def send_password_reset_otp(user_email: str, otp_code: str):
+#     msg = MIMEMultipart('alternative')
+#     msg['Subject'] = "🔢 Votre code de vérification ChapMoney"
+#     msg["From"] = "ChapMoney Support <chapmoneyapp@chapmoney.org>"
+#     msg['To'] = user_email
 
-    html_content = f"""
-    <html>
-        <head>
-            <style>
-                body {{
-                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #444444;
-                    margin: 0;
-                    padding: 20px;
-                    background-color: #f7f9fc;
-                }}
-                .container {{
-                    max-width: 600px;
-                    margin: 0 auto;
-                    background: #ffffff;
-                    border-radius: 15px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                }}
-                .header {{
-                    background: #2c3e50;
-                    padding: 40px 20px;
-                    border-radius: 15px 15px 0 0;
-                    text-align: center;
-                }}
-                .header h1 {{
-                    color: white;
-                    margin: 0;
-                    font-size: 26px;
-                    letter-spacing: 1px;
-                }}
-                .content {{
-                    padding: 40px;
-                }}
-                .otp-box {{
-                    background: #f4f6f9;
-                    border-radius: 8px;
-                    padding: 25px;
-                    margin: 30px 0;
-                    text-align: center;
-                    border: 2px dashed #3498db;
-                }}
-                .otp-code {{
-                    font-size: 32px;
-                    font-weight: 700;
-                    color: #2c3e50;
-                    letter-spacing: 3px;
-                    margin: 15px 0;
-                }}
-                .warning {{
-                    color: #e74c3c;
-                    font-size: 14px;
-                    margin-top: 25px;
-                }}
-                .footer {{
-                    text-align: center;
-                    padding: 25px;
-                    background: #2c3e50;
-                    border-radius: 0 0 15px 15px;
-                    color: #ecf0f1;
-                    font-size: 12px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🔒 Protection de votre compte</h1>
-                </div>
+#     html_content = f"""
+#     <html>
+#         <head>
+#             <style>
+#                 body {{
+#                     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+#                     line-height: 1.6;
+#                     color: #444444;
+#                     margin: 0;
+#                     padding: 20px;
+#                     background-color: #f7f9fc;
+#                 }}
+#                 .container {{
+#                     max-width: 600px;
+#                     margin: 0 auto;
+#                     background: #ffffff;
+#                     border-radius: 15px;
+#                     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+#                 }}
+#                 .header {{
+#                     background: #2c3e50;
+#                     padding: 40px 20px;
+#                     border-radius: 15px 15px 0 0;
+#                     text-align: center;
+#                 }}
+#                 .header h1 {{
+#                     color: white;
+#                     margin: 0;
+#                     font-size: 26px;
+#                     letter-spacing: 1px;
+#                 }}
+#                 .content {{
+#                     padding: 40px;
+#                 }}
+#                 .otp-box {{
+#                     background: #f4f6f9;
+#                     border-radius: 8px;
+#                     padding: 25px;
+#                     margin: 30px 0;
+#                     text-align: center;
+#                     border: 2px dashed #3498db;
+#                 }}
+#                 .otp-code {{
+#                     font-size: 32px;
+#                     font-weight: 700;
+#                     color: #2c3e50;
+#                     letter-spacing: 3px;
+#                     margin: 15px 0;
+#                 }}
+#                 .warning {{
+#                     color: #e74c3c;
+#                     font-size: 14px;
+#                     margin-top: 25px;
+#                 }}
+#                 .footer {{
+#                     text-align: center;
+#                     padding: 25px;
+#                     background: #2c3e50;
+#                     border-radius: 0 0 15px 15px;
+#                     color: #ecf0f1;
+#                     font-size: 12px;
+#                 }}
+#             </style>
+#         </head>
+#         <body>
+#             <div class="container">
+#                 <div class="header">
+#                     <h1>🔒 Protection de votre compte</h1>
+#                 </div>
 
-                <div class="content">
-                    <p>Bonjour,</p>
-                    <p>Vous avez initié une réinitialisation de mot de passe. Utilisez ce code de vérification à usage unique :</p>
+#                 <div class="content">
+#                     <p>Bonjour,</p>
+#                     <p>Vous avez initié une réinitialisation de mot de passe. Utilisez ce code de vérification à usage unique :</p>
 
-                    <div class="otp-box">
-                        <p style="margin:0 0 10px 0;color: #7f8c8d;">Code de vérification</p>
-                        <div class="otp-code">{otp_code}</div>
-                        <small>Valable pendant 15 minutes</small>
-                    </div>
+#                     <div class="otp-box">
+#                         <p style="margin:0 0 10px 0;color: #7f8c8d;">Code de vérification</p>
+#                         <div class="otp-code">{otp_code}</div>
+#                         <small>Valable pendant 15 minutes</small>
+#                     </div>
 
-                    <p class="warning">⚠️ Ne partagez jamais ce code avec qui que ce soit.</p>
+#                     <p class="warning">⚠️ Ne partagez jamais ce code avec qui que ce soit.</p>
 
-                    <p>Si vous n'avez pas fait cette demande, veuillez ignorer cet email ou nous contacter immédiatement.</p>
-                </div>
+#                     <p>Si vous n'avez pas fait cette demande, veuillez ignorer cet email ou nous contacter immédiatement.</p>
+#                 </div>
 
-                <div class="footer">
-                    <p>© 2024 ChapMoney - Sécurité des comptes</p>
-                    <p>Cet email a été généré automatiquement - Merci de ne pas y répondre</p>
-                </div>
-            </div>
-        </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, "html"))
+#                 <div class="footer">
+#                     <p>© 2024 ChapMoney - Sécurité des comptes</p>
+#                     <p>Cet email a été généré automatiquement - Merci de ne pas y répondre</p>
+#                 </div>
+#             </div>
+#         </body>
+#     </html>
+#     """
+#     msg.attach(MIMEText(html_content, "html"))
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
+#     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+#         server.starttls()
+#         server.login(SMTP_USER, SMTP_PASSWORD)
+#         server.sendmail("chapmoneyapp@chapmoney.org", "contact@chapmoney.org", msg.as_string())
 
 
 

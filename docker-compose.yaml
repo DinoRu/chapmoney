@@ -11,15 +11,15 @@ services:
     environment:
       - HTTPS_METHOD=redirect 
     volumes:
-      - ./certs:/etc/nginx/certs  # Changement important: :ro supprimé
+      - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d:ro
-      - ./html:/usr/share/nginx/html  # Volume persistant pour les challenges
+      - ./html:/usr/share/nginx/html
+      - ./auth:/etc/nginx/auth:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro,z
     labels:
       - com.github.nginx-proxy.nginx-proxy
     networks:
       - app_network
-
 
   nginx_letsencrypt:
     image: nginxproxy/acme-companion
@@ -94,18 +94,23 @@ services:
     container_name: redis
     networks:
       - app_network
+    expose:
+      - 6379
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    env_file:
+      - .env
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     networks:
       - app_network
+    expose:
+      - 5672
+    ports:
+      - "127.0.0.1:15672:15672"
 
   celery_worker:
     build:
@@ -116,6 +121,9 @@ services:
       bash -c "cd /app && celery -A src.celery:celery_app worker --loglevel=info -E"
     env_file:
       - ./money_transfer/.env
+    environment:
+      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672//"
+      REDIS_URL: "redis://redis:6379/0"
     networks:
       - app_network
     depends_on:
@@ -129,11 +137,9 @@ services:
       dockerfile: Dockerfile
     container_name: flower
     command: celery -A src.celery:celery_app flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH}
-    ports:
-      - "5555:5555"
-    env_file:
-      - .env
     environment:
+      REDIS_URL: "redis://redis:6379/0"
+      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672//"
       FLOWER_BASIC_AUTH: ${FLOWER_BASIC_AUTH}
     networks:
       - app_network
@@ -141,6 +147,27 @@ services:
       - rabbitmq
       - redis
       - api
+    expose:
+      - 5555
+
+  management_proxy:
+    image: nginx:alpine
+    container_name: management_proxy
+    environment:
+      VIRTUAL_HOST: management.chapdemo.ru
+      LETSENCRYPT_HOST: management.chapdemo.ru
+      LETSENCRYPT_EMAIL: diarra.msa@gmail.com
+    volumes:
+      - ./vhost.d:/etc/nginx/vhost.d:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./auth:/etc/nginx/auth:ro
+    networks:
+      - app_network
+    depends_on:
+      - nginx_proxy
+      - nginx_letsencrypt
+      - rabbitmq
+      - flower
 
 volumes:
   money_data:

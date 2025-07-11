@@ -20,8 +20,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
 
     REDIS_URL: str
-    REDIS_URL_LOCAL: str
-    RABBITMQ_URL: str = "amqp://guest:guest@rabbitmq:5672//"
+    RABBITMQ_URL: str
 
     MAIL_USERNAME: str
     MAIL_PASSWORD: str
@@ -53,7 +52,7 @@ class Settings(BaseSettings):
         return self.REDIS_URL
 
     def active_rabbitmq_url(self):
-        return self.RABBITMQ_URL if self.ENV == "docker" else self.REDIS_URL_LOCAL
+        return self.RABBITMQ_URL
 
 
 settings = Settings()
