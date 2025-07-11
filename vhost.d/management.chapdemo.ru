@@ -1,12 +1,4 @@
-# RabbitMQ Management UI
-upstream rabbit_management {
-    server rabbitmq:15672;
-}
-
-# Flower Monitoring
-upstream flower_monitoring {
-    server flower:5555;
-}
+# Supprimer les blocs upstream - ils seront déplacés
 
 server {
     listen 80;
@@ -36,7 +28,8 @@ server {
         auth_basic "RabbitMQ Management";
         auth_basic_user_file /etc/nginx/auth/rabbitmq.passwd;
         
-        proxy_pass http://rabbit_management/;
+        # Utiliser directement le service Docker
+        proxy_pass http://rabbitmq:15672/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -52,7 +45,8 @@ server {
         auth_basic "Flower Monitoring";
         auth_basic_user_file /etc/nginx/auth/flower.passwd;
         
-        proxy_pass http://flower_monitoring/;
+        # Utiliser directement le service Docker
+        proxy_pass http://flower:5555/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -69,5 +63,10 @@ server {
     location / {
         deny all;
         return 404;
+    }
+    
+    # Acme Challenge pour Let's Encrypt
+    location /.well-known/acme-challenge/ {
+        root /usr/share/nginx/html;
     }
 }

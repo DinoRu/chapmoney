@@ -161,6 +161,7 @@ services:
       - ./vhost.d:/etc/nginx/vhost.d:ro
       - ./certs:/etc/nginx/certs:ro
       - ./auth:/etc/nginx/auth:ro
+      - ./html:/usr/share/nginx/html  # Ajout important pour le challenge ACME
     networks:
       - app_network
     depends_on:
