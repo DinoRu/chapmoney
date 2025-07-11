@@ -23,7 +23,7 @@ from src.db.session import get_session
 from src.schemas.notifications import NotificationCreate
 from src.schemas.user import UserRead, UserCreate, UserWithToken, UserLogin, UserUpdate, EmailModel, ChangePasswordRequest, ForgotPasswordRequest, \
     ResetPassword, OTPSendRequest, OTPVerifyRequest, PasswordResetRequest, PinCreate, PinVerify, RefreshTokenRequest
-from src.utils.email_utils import send_password_reset_email, send_password_reset_otp
+# from src.utils.email_utils import send_password_reset_email, send_password_reset_otp
 from src.utils.notification_utils import get_player_ids_for_users, send_one_signal_notification
 
 router = APIRouter()
@@ -382,7 +382,7 @@ async def forgot_password(
             expires_delta=timedelta(minutes=15)
         )
         reset_link = f"http://{settings.FRONTEND_URL}/auth/password-reset-confirm?token={reset_token}"
-        send_password_reset_email.delay(user_email=user.email, reset_link=reset_link)
+        # send_password_reset_email.delay(user_email=user.email, reset_link=reset_link)
 
     return {"message": "Si l'email existe, un lien de réinitialisation a été envoyé"}
 
@@ -442,7 +442,7 @@ async def send_otp(request: OTPSendRequest, session: AsyncSession = Depends(get_
     print(f'OTP pour {request.email}: {otp_code}')
 
     # En prod: send_email
-    send_password_reset_otp.delay(user_email=user.email, otp_code=otp_code)
+    # send_password_reset_otp.delay(user_email=user.email, otp_code=otp_code)
 
     return {"message": "Code OTP envoyé"}
 
