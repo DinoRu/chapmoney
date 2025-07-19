@@ -1,7 +1,8 @@
 import os
-
+import smtplib
 import uuid
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import requests
 from dotenv import load_dotenv
@@ -12,6 +13,13 @@ from src.config import settings
 
 load_dotenv()
 
+# SMTP_HOST = "mail.smtp2go.com"
+# SMTP_PORT = 2525
+# SMTP_USER = "chapmoney.org"
+# SMTP_PASSWORD = "8TvtWLNspl8KYKeP"
+# ADMIN_EMAIL = "chapmoneyapp@chapmoney.org"
+
+# USER_MAIL = "diarra.msa@gmail.com"
 
 API_KEY = os.getenv("RUSEND_API_KEY")
 URL = "https://api.beta.rusender.ru/api/v1/external-mails/send"

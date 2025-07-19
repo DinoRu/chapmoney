@@ -4,8 +4,6 @@ from celery import Celery
 from kombu import Connection
 from dotenv import load_dotenv
 
-from src.config import settings
-
 # Configuration du logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,9 +11,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Test de connexion RabbitMQ
-# rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672//")
-rabbitmq_url = settings.RABBITMQ_URL
-
+rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672//")
 try:
     with Connection(rabbitmq_url) as conn:
         conn.connect()
