@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Annotated
 
 import httpx
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 from dotenv import load_dotenv
 from fastapi import APIRouter, status, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
