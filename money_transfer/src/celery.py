@@ -14,7 +14,7 @@ load_dotenv()
 
 # Test de connexion RabbitMQ
 # rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672//")
-rabbitmq_url = settings.RABBITMQ_URL
+rabbitmq_url = "amqp://chap_user:v3ry_Str0ng_P@ss@rabbitmq:5672//"
 try:
     with Connection(rabbitmq_url) as conn:
         conn.connect()
