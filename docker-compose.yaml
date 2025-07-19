@@ -11,9 +11,9 @@ services:
     environment:
       - HTTPS_METHOD=redirect 
     volumes:
-      - ./certs:/etc/nginx/certs  # Changement important: :ro supprimé
+      - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d:ro
-      - ./html:/usr/share/nginx/html  # Volume persistant pour les challenges
+      - ./html:/usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro,z
     labels:
       - com.github.nginx-proxy.nginx-proxy
@@ -98,16 +98,20 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     env_file:
-      - .env
+      - ./.env
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}  # Utilise les variables du .env
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - app_network
+
   celery_worker:
     build:
       context: ./money_transfer
@@ -116,32 +120,44 @@ services:
     command: >
       bash -c "cd /app && celery -A src.celery:celery_app worker --loglevel=info -E"
     env_file:
-      - ./money_transfer/.env
+      - ./.env
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672//
+      REDIS_URL: ${REDIS_URL}
     networks:
       - app_network
     depends_on:
-      - rabbitmq
-      - redis
-      - api
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      api:
+        condition: service_started
 
   flower:
     build:
       context: ./money_transfer
       dockerfile: Dockerfile
     container_name: flower
-    command: celery -A src.celery:celery_app flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH}
+    command: 
+      - sh
+      - -c
+      - "sleep 20 && celery -A src.celery:celery_app flower --port=5555 --basic_auth=$$FLOWER_BASIC_AUTH"
     ports:
       - "5555:5555"
     env_file:
-      - .env
+      - ./.env
     environment:
       FLOWER_BASIC_AUTH: ${FLOWER_BASIC_AUTH}
     networks:
       - app_network
     depends_on:
-      - rabbitmq
-      - redis
-      - api
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      celery_worker:
+        condition: service_started
 
 volumes:
   money_data:

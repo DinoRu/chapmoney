@@ -1,13 +1,29 @@
 import os
+import logging
 from celery import Celery
+from kombu import Connection
 from dotenv import load_dotenv
 
+# Configuration du logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
+
+# Test de connexion RabbitMQ
+rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672//")
+try:
+    with Connection(rabbitmq_url) as conn:
+        conn.connect()
+        logger.info("✅ Connexion RabbitMQ réussie")
+except Exception as e:
+    logger.error(f"❌ Erreur connexion RabbitMQ: {str(e)}")
+    raise
 
 # Configuration Celery
 celery_app = Celery(
     'tasks',
-    broker=os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672//"),
+    broker=rabbitmq_url,
     backend=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
 )
 
@@ -19,4 +35,5 @@ celery_app.conf.update(
     timezone='UTC',
     enable_utc=True,
     task_track_started=True,
+    broker_connection_retry_on_startup=True,
 )
