@@ -159,7 +159,7 @@ def send_transaction_email(self, transaction_id: str):
 @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
 def send_password_reset_email(user_email: str, reset_link: str):
     payload = {
-        "idempotencyKey": str(uuid.uuid4()),  # Clé unique recommandée
+        "idempotencyKey": str(uuid.uuid4()),
         "mail": {
             "to": {
                 "email": user_email,
@@ -270,13 +270,9 @@ def send_password_reset_email(user_email: str, reset_link: str):
 
 @celery_app.task(bin=True, max_retries=3, default_retry_delay=60)
 def send_password_reset_otp(user_email: str, otp_code: str):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = "🔢 Votre code de vérification ChapMoney"
-    msg["From"] = "ChapMoney Support <chapmoneyapp@chapmoney.org>"
-    msg['To'] = user_email
 
     payload = {
-        "idempotencyKey": str(uuid.uuid4()),  # Clé unique recommandée
+        "idempotencyKey": str(uuid.uuid4()),
         "mail": {
             "to": {
                 "email": user_email,
@@ -286,8 +282,8 @@ def send_password_reset_otp(user_email: str, otp_code: str):
                 "email": "admin@chapdemo.ru",
                 "name": "ChapDemo"
             },
-            "subject": "🔐 Réinitialisation de mot de passe",
-            "previewTitle": "Votre email de reinitialisation",
+            "subject": "🔢 Votre code de vérification ChapMoney",
+            "previewTitle": "Votre code de verification",
             "html": f"""
                     <html>
                         <head>
