@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 import logging
 
 
+
+
 class Settings(BaseSettings):
     ENV: str = 'local'
     APP_ENV: str

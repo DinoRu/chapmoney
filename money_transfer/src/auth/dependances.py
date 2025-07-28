@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -22,7 +22,7 @@ async def get_current_user(
 ) -> User:
 	credentials_exception = HTTPException(
 		status_code=status.HTTP_401_UNAUTHORIZED,
-		detail="Impossible de valider les identifants",
+		detail="Impossible de valider les identifiants",
 		headers={"WWW-Authenticate": "Bearer"}
 	)
 	try:

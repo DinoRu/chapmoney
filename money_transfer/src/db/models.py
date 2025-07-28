@@ -139,6 +139,7 @@ class PaymentType(SQLModel, table=True):
 def generate_reference():
     return f"{random.randint(10**7, 10**8 - 1)}"
 
+
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
     __table_args__ = (
